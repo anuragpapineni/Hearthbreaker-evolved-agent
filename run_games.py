@@ -1,9 +1,15 @@
-from hearthbreaker.agents.basic_agents import RandomAgent
+from hearthbreaker.agents.basic_agents import *
 from hearthbreaker.constants import CHARACTER_CLASS
 from hearthbreaker.game_objects import Game, card_lookup, Deck
 from hearthbreaker.cards import *
+from neat import config, population, chromosome, genome, visualize
+from neat.nn import nn_pure as nn
 import timeit
 
+config.load('evolve_agent_config')
+
+# set node gene type
+chromosome.node_gene_type = genome.NodeGene
 
 def load_deck(filename):
     cards = []
@@ -27,17 +33,17 @@ def load_deck(filename):
     return Deck(cards, character_class)
 
 
-def do_stuff():
+def do_stuff(net):
     def play_game():
         new_game = game.copy()
         new_game.start()
-
     deck1 = load_deck("example.hsdeck")
     deck2 = load_deck("example.hsdeck")
-    game = Game([deck1, deck2], [RandomAgent(), RandomAgent()])
+    game = Game([deck1, deck2], [CustomAgent(net), RandomAgent()])
     game.start()
 
     print(timeit.timeit(play_game, 'gc.enable()', number=1000))
 
 if __name__ == "__main__":
-    do_stuff()
+    net = None
+    do_stuff(net)

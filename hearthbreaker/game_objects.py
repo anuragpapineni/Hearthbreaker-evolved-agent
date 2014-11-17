@@ -657,6 +657,9 @@ class Card(Bindable):
         """
         return self.name + " (" + str(self.mana) + " mana)"
 
+    def create_minion(self, player):
+        return None
+
 
 class MinionCard(Card, metaclass=abc.ABCMeta):
     """
@@ -1283,7 +1286,10 @@ class Deck:
         self.left = 30
 
     def copy(self):
-        return copy.deepcopy(self)
+        d = Deck(self.cards, self.character_class)
+        for i in range(0, 30):
+            d.cards[i].drawn=self.cards[i].drawn
+        return d
 
     def can_draw(self):
         return self.left > 0
@@ -1479,6 +1485,28 @@ class Player(Bindable):
         copied_player.effect_count = dict()
         return copied_player
 
+    def setPlayer(self, new_game, copied_player):
+        copied_player.events = dict()
+        copied_player.auras = []
+        copied_player.mana_filters = []
+        copied_player.effects = []
+        copied_player.mana = self.mana 
+        copied_player.hero = self.hero.copy(copied_player, new_game)
+        copied_player.deck = self.deck.copy()
+        copied_player.graveyard = copy.copy(self.graveyard)
+        copied_player.minions = [minion.copy(copied_player, new_game) for minion in self.minions]
+        copied_player.hand = [type(card)() for card in self.hand]
+        copied_player.game = new_game
+        for effect in self.effects:
+            copied_player.add_effect(effect)
+        copied_player.secrets = []
+        for secret in self.secrets:
+            new_secret = type(secret)()
+            new_secret.player = copied_player
+            copied_player.secrets.append(new_secret)
+        copied_player.effect_count = dict()
+        return
+
     def draw(self):
         if self.can_draw():
             card = self.deck.draw(self.game)
@@ -1572,15 +1600,16 @@ class Player(Bindable):
 class Game(Bindable):
     def __init__(self, decks, agents, random_func=random.randint):
         super().__init__()
+        self.play_order = [0, 0]
         self.delayed_minions = set()
         self.random_func = random_func
         first_player = random_func(0, 1)
         if first_player is 0:
-            play_order = [0, 1]
+            self.play_order = [0, 1]
         else:
-            play_order = [1, 0]
-        self.players = [Player("one", decks[play_order[0]], agents[play_order[0]], self, random_func),
-                        Player("two", decks[play_order[1]], agents[play_order[1]], self, random_func)]
+            self.play_order = [1, 0]
+        self.players = [Player("one", decks[self.play_order[0]], agents[self.play_order[0]], self, random_func),
+                        Player("two", decks[self.play_order[1]], agents[self.play_order[1]], self, random_func)]
         self.current_player = self.players[0]
         self.other_player = self.players[1]
         self.current_player.opponent = self.other_player
@@ -1641,10 +1670,27 @@ class Game(Bindable):
         self.current_player = self.players[1]
         while not self.game_ended:
             self.play_single_turn()
+        if self.play_order[0] is 0:
+            # our agent is players[0]
+            if self.players[0].hero.health<=0:
+                # we lost
+                return 0
+            elif self.players[1].hero.health<=0:
+                # we won
+                return 1
+        else:
+            # our agent is players[1]
+            if self.players[1].hero.health<=0:
+                # we lost
+                return 0
+            elif self.players[0].hero.health<=0:
+                # we won
+                return 1
+        return 0
 
     def play_single_turn(self):
         self._start_turn()
-        self.current_player.agent.do_turn(self.current_player)
+        self.current_player.agent.do_turn(self.current_player, self)
         self._end_turn()
 
     def _start_turn(self):
@@ -1727,6 +1773,28 @@ class Game(Bindable):
         for secret in copied_game.other_player.secrets:
             secret.activate(copied_game.other_player)
         return copied_game
+    
+    def clone(self, othergame):
+        othergame.players = [player.copy(othergame) for player in self.players]
+        if self.current_player is self.players[0]:
+            othergame.current_player = othergame.players[0]
+            othergame.other_player = othergame.players[1]
+        else:
+            othergame.current_player = othergame.players[1]
+            othergame.other_player = othergame.players[0]
+
+        othergame.current_player.opponent = othergame.other_player
+        othergame.other_player.opponent = othergame.current_player
+
+        for player in othergame.players:
+            for minion in player.minions:
+                for effect in minion._effects_to_add:
+                    minion.add_effect(effect)
+                minion._effects_to_add = []
+
+        for secret in othergame.other_player.secrets:
+            secret.activate(othergame.other_player)
+        return
 
     def play_card(self, card):
         if self.game_ended:

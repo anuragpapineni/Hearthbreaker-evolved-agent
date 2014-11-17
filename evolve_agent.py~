@@ -1,0 +1,91 @@
+from hearthbreaker.agents.basic_agents import *
+from hearthbreaker.agents.trade_agent import *
+from hearthbreaker.constants import CHARACTER_CLASS
+from hearthbreaker.game_objects import Game, card_lookup, Deck
+from hearthbreaker.cards import *
+import math
+import random
+import pickle
+from neat import config, population, chromosome, genome, visualize
+from neat.nn import nn_pure as nn
+#from neat.nn import nn_cpp as nn # C++ extension
+
+config.load('evolve_agent_config')
+
+# set node gene type
+chromosome.node_gene_type = genome.NodeGene
+generations=0
+
+def load_deck(filename):
+    cards = []
+    character_class = CHARACTER_CLASS.MAGE
+
+    with open(filename, "r") as deck_file:
+        contents = deck_file.read()
+        items = contents.splitlines()
+        for line in items[0:]:
+            parts = line.split(" ", 1)
+            count = int(parts[0])
+            for i in range(0, count):
+                card = card_lookup(parts[1])
+                if card.character_class != CHARACTER_CLASS.ALL:
+                    character_class = card.character_class
+                cards.append(card)
+
+    if len(cards) > 30:
+        pass
+
+    return Deck(cards, character_class)
+
+def do_stuff(net):
+    def play_game():
+        new_game = game.copy()
+        new_game.start()
+    deck1 = load_deck("example.hsdeck")
+    deck2 = load_deck("example.hsdeck")
+    game = Game([deck1, deck2], [CustomAgent(net), TradeAgent()])
+    #print(timeit.timeit(play_game, 'gc.enable()', number=1000))
+    return game.start()
+
+    
+
+def eval_fitness(population):
+    for chromo in population:
+        net = nn.create_ffphenotype(chromo)
+        wins = 0
+
+        # run 7 games
+        for i in range(0, 20):
+            net.flush()
+            wins += do_stuff(net)
+        chromo.fitness = wins
+
+population.Population.evaluate = eval_fitness
+f = open('checkpoint_99', 'rb')
+pop = population.Population(checkpoint_file=f)
+pop.epoch(0, report=True, save_best=False)
+f.close()
+winner = pop.stats[0][-1]
+
+
+
+# Visualize the winner network (requires PyDot)
+#visualize.draw_net(winner) # best chromosome
+
+# Plots the evolution of the best/average fitness (requires Biggles)
+#visualize.plot_stats(pop.stats)
+# Visualizes speciation
+#visualize.plot_species(pop.species_log)
+
+# Let's check if it's really solved the problem
+#print '\nBest network output:'
+#brain = nn.create_ffphenotype(winner)
+#for i, inputs in enumerate(INPUTS):
+#    output = brain.sactivate(inputs) # serial activation
+#    print "%1.5f \t %1.5f" %(OUTPUTS[i], output[0])
+
+# saves the winner
+file = open('winner_chromosome', 'wb')
+pickle.dump(winner, file)
+file.close()
+

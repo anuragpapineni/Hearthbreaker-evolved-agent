@@ -131,13 +131,14 @@ class TradeAgent(TradeMixin, AttackMixin, PlayMixin, ChooseTargetMixin):
         self.current_trade = None
         self.last_card_played = NullCard()
 
-    def do_turn(self, player):
+    def do_turn(self, player, game):
         self.player = player
         self.play_cards(player)
         self.attack(player)
 
         if not player.game.game_ended:
             self.play_cards(player)
+        return
 
     def do_card_check(self, cards):
         return [True, True, True, True]

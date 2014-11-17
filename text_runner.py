@@ -54,7 +54,7 @@ def render_game(stdscr):
             curses.init_pair(5, curses.COLOR_WHITE, curses.COLOR_CYAN)
             curses.init_pair(6, curses.COLOR_BLACK, curses.COLOR_GREEN)
 
-        def do_turn(self, player):
+        def do_turn(self, player, game):
             renderer.draw_game()
             index = 0
             action = self.choose_action()
