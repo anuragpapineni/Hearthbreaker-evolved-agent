@@ -1,7 +1,9 @@
 This Agent
 =============
 
-This hearthstone agent was created by making a feed forward neural network that takes a Hearthstone board as input and returns a score as output. The network was evolved using neat-python makes moves based on which ones it believes has the best score. 
+This hearthstone agent was created by making a feed forward neural network that takes a Hearthstone board as input and returns a score as output. The network was evolved using neat-python makes moves based on which ones it believes has the best score. The agent makes fairly logical decisions  will at the very least trade efficiently from turn to turn while minimizing the cards used. However, it cannot play combo reliant decks since decisions are based entirely on the board and hand, so it will not save any cards if it sees an effective play. More details about process, implementation, and statistics can be found in the following report
+
+https://www.docdroid.net/file/download/MJ5HmXl/hearthstoneaireport.pdf
 
 Build instructions
 ------------------
