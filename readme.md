@@ -1,3 +1,20 @@
+This Agent
+=============
+
+This hearthstone agent was created by making a feed forward neural network that takes a Hearthstone board as input and returns a score as output. The network was evolved using neat-python makes moves based on which ones it believes has the best score. 
+
+Build instructions
+------------------
+
+This is a pretty hard to build project but if you follow these instructions you should be able to build it with minimal problems. If there are issues, most of the errors will likely be due to python 2 vs python 3 issues.
+
+First you need to have neat-python installed on your machine. Neat-python is free and can be found at this url along with documentation and whatnot: http://neat-python.readthedocs.org/en/latest/.
+
+Second you need to unpack this repository into a folder. This repository uses Hearthbreaker, and already has a modded version of the repository. The original can be found here https://github.com/danielyule/hearthbreaker, but documentation for hearthbreaker can be found underneath.
+
+Last you need to go into whatever folder you unpacked the repository into and run 'python text_runner.py deck1.hsdeck deck2.hsdeck'. deck1 and deck2 can be replaced with any hsdeck file of your choosing provided cards are before or during the naxxramas expansion
+
+
 Hearthbreaker
 =============
 A Hearthstone Simulator
